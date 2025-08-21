@@ -61,14 +61,19 @@ class ApiClient {
         const method = options.method || 'GET';
 
         // 用户注册
-        if (endpoint === '/users/register' && method === 'POST') {
+        if (endpoint === '/users' && method === 'POST') {
             const body = JSON.parse(options.body || '{}');
             return {
                 success: true,
                 data: {
-                    user_id: 'test-user-' + Date.now(),
-                    username: body.username || '测试玩家',
-                    created_at: new Date().toISOString()
+                    id: Date.now(),
+                    name: body.name || '测试玩家',
+                    gender: body.gender || 'male',
+                    idNumber: body.idNumber || '123456789012345678',
+                    alipay: body.alipay || '13800138000',
+                    registrationDate: new Date().toISOString().split('T')[0],
+                    registerTime: new Date().toISOString(),
+                    user_id: 'test-user-' + Date.now()
                 }
             };
         }
@@ -111,11 +116,16 @@ class ApiClient {
     }
 
     // 用户相关API
-    async registerUser(username, email = null) {
+    async registerUser(name, gender = null, idNumber = null, alipay = null) {
         try {
-            const response = await this.request('/users/register', {
+            // 如果只传入了用户名，则使用简化注册
+            const userData = typeof name === 'string' && !gender ?
+                { name } :
+                { name, gender, idNumber, alipay };
+
+            const response = await this.request('/users', {
                 method: 'POST',
-                body: JSON.stringify({ username, email })
+                body: JSON.stringify(userData)
             });
 
             if (response.success) {

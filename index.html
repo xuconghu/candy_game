@@ -3915,7 +3915,7 @@
 
                 try {
                     // 调用API获取用户列表
-                    const response = await fetch('http://106.15.184.68:3000/api/users');
+                    const response = await fetch('http://106.15.184.68/api/users');
                     const result = await response.json();
 
                     if (result.success && result.data && result.data.length > 0) {
