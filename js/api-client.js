@@ -17,15 +17,13 @@ class ApiClient {
             return 'http://localhost:3000/api';
         }
 
-        // GitHub Pages环境 - 使用HTTPS
+        // GitHub Pages环境 - 使用你的域名
         if (window.location.hostname.includes('github.io')) {
-            // 注意：这需要服务器支持HTTPS，暂时使用HTTP进行测试
-            // 在生产环境中应该配置HTTPS
-            return 'http://106.15.184.68/api';
+            return 'http://xuconghu.top/api';
         }
 
-        // 其他生产环境
-        return 'http://106.15.184.68/api';
+        // 其他生产环境 - 使用你的域名
+        return 'http://xuconghu.top/api';
     }
 
     // 通用HTTP请求方法
