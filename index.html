@@ -3914,9 +3914,22 @@
                 userListContent.innerHTML = '<div class="loading">正在加载用户列表...</div>';
 
                 try {
-                    // 调用API获取用户列表
-                    const response = await fetch('http://106.15.184.68/api/users');
-                    const result = await response.json();
+                    // 调用API获取用户列表 - 使用代理服务避免混合内容问题
+                    const apiUrl = window.location.protocol === 'https:'
+                        ? 'https://api.allorigins.win/get?url=' + encodeURIComponent('http://106.15.184.68/api/users')
+                        : 'http://106.15.184.68/api/users';
+
+                    const response = await fetch(apiUrl);
+                    let result;
+
+                    if (window.location.protocol === 'https:') {
+                        // 使用代理服务时，需要解析嵌套的响应
+                        const proxyResult = await response.json();
+                        result = JSON.parse(proxyResult.contents);
+                    } else {
+                        // 直接访问API
+                        result = await response.json();
+                    }
 
                     if (result.success && result.data && result.data.length > 0) {
                         // 构建用户列表表格

@@ -16,7 +16,15 @@ class ApiClient {
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
             return 'http://localhost:3000/api';
         }
-        // 生产环境 - 使用阿里云服务器IP
+
+        // GitHub Pages环境 - 使用HTTPS
+        if (window.location.hostname.includes('github.io')) {
+            // 注意：这需要服务器支持HTTPS，暂时使用HTTP进行测试
+            // 在生产环境中应该配置HTTPS
+            return 'http://106.15.184.68/api';
+        }
+
+        // 其他生产环境
         return 'http://106.15.184.68/api';
     }
 
@@ -28,8 +36,8 @@ class ApiClient {
             return this.getMockResponse(endpoint, options);
         }
 
-        const url = `${this.baseURL}${endpoint}`;
-        const config = {
+        let url = `${this.baseURL}${endpoint}`;
+        let config = {
             headers: {
                 'Content-Type': 'application/json',
                 ...options.headers
@@ -37,11 +45,35 @@ class ApiClient {
             ...options
         };
 
+        // 如果是HTTPS环境且API是HTTP，使用代理服务
+        if (window.location.protocol === 'https:' && url.startsWith('http://')) {
+            console.log(`🔄 使用代理服务访问HTTP API: ${url}`);
+
+            if (options.method && options.method !== 'GET') {
+                // POST请求需要特殊处理
+                url = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
+                // 注意：代理服务可能不支持POST，这里需要特殊处理
+                console.warn('⚠️ 代理服务可能不支持POST请求，建议使用本地测试文件');
+            } else {
+                // GET请求使用代理
+                url = 'https://api.allorigins.win/get?url=' + encodeURIComponent(url);
+                config.headers = {}; // 代理服务不需要自定义headers
+            }
+        }
+
         try {
             console.log(`🌐 API请求: ${config.method || 'GET'} ${url}`);
 
             const response = await fetch(url, config);
-            const data = await response.json();
+            let data;
+
+            if (window.location.protocol === 'https:' && url.includes('allorigins.win/get')) {
+                // 解析代理服务的响应
+                const proxyResult = await response.json();
+                data = JSON.parse(proxyResult.contents);
+            } else {
+                data = await response.json();
+            }
 
             if (!response.ok) {
                 throw new Error(data.error || `HTTP ${response.status}`);
