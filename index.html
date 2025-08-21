@@ -33,6 +33,143 @@
             flex-direction: column;
         }
 
+        /* 加载界面样式 */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('image/background.png') center center / cover no-repeat;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            transition: opacity 0.5s ease-out;
+        }
+
+        .loading-screen.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-title {
+            font-size: 48px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+            margin-bottom: 50px;
+        }
+
+        .loading-container {
+            width: 400px;
+            height: 60px;
+            position: relative;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 30px;
+            padding: 8px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 3px solid rgba(255, 182, 193, 0.8);
+        }
+
+        .loading-bar {
+            height: 100%;
+            background: linear-gradient(90deg,
+                #FFB6C1 0%,
+                #FFC0CB 50%,
+                #FFB6C1 100%);
+            border-radius: 22px;
+            width: 0%;
+            transition: width 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .loading-bar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg,
+                transparent,
+                rgba(255, 255, 255, 0.6),
+                transparent);
+            animation: loadingShine 2s ease-in-out infinite;
+        }
+
+        .candy-pusher {
+            position: absolute;
+            top: 50%;
+            left: 0px;
+            transform: translateY(-50%);
+            width: 40px;
+            height: 40px;
+            background-image: url('image/pink.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            transition: left 0.5s ease;
+            animation: candyBounce 1s ease-in-out infinite alternate;
+            z-index: 10;
+        }
+
+        .loading-text {
+            color: white;
+            font-size: 18px;
+            margin-top: 20px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+
+        .loading-percentage {
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 10px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        @keyframes loadingShine {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        @keyframes candyGradient {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        @keyframes candyBounce {
+            0% {
+                transform: translateY(-50%) scale(1) rotate(0deg);
+            }
+            100% {
+                transform: translateY(-50%) scale(1.1) rotate(5deg);
+            }
+        }
+
+        @keyframes candyRotate {
+            0% {
+                transform: rotate(0deg) scale(1);
+            }
+            25% {
+                transform: rotate(-10deg) scale(1.1);
+            }
+            50% {
+                transform: rotate(0deg) scale(1.2);
+            }
+            75% {
+                transform: rotate(10deg) scale(1.1);
+            }
+            100% {
+                transform: rotate(0deg) scale(1);
+            }
+        }
+
         .game-container {
             background: transparent;
             flex: 1;
@@ -2524,6 +2661,17 @@
     </style>
 </head>
 <body>
+    <!-- 加载界面 -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-title">糖果游戏</div>
+        <div class="loading-container">
+            <div id="loadingBar" class="loading-bar"></div>
+            <div id="candyPusher" class="candy-pusher"></div>
+        </div>
+        <div id="loadingText" class="loading-text">正在加载游戏资源...</div>
+        <div id="loadingPercentage" class="loading-percentage">0%</div>
+    </div>
+
     <!-- 开始菜单 -->
     <div id="startMenu" class="start-menu">
         <!-- 装饰图片 -->
@@ -6095,16 +6243,141 @@
             }
         }
 
+        // 资源加载管理
+        class ResourceLoader {
+            constructor() {
+                this.totalResources = 0;
+                this.loadedResources = 0;
+                this.loadingBar = document.getElementById('loadingBar');
+                this.loadingText = document.getElementById('loadingText');
+                this.loadingPercentage = document.getElementById('loadingPercentage');
+                this.loadingScreen = document.getElementById('loadingScreen');
+
+                this.resourceList = [
+                    'image/background.png',
+                    'image/bg1.png',
+                    'image/bg2.png',
+                    'image/bg3.png',
+                    'image/bg4.png',
+                    'image/bg5.png',
+                    'image/red.png',
+                    'image/blue.png',
+                    'image/yellow.png',
+                    'image/pink.png',
+                    'image/light_green.png',
+                    'image/deep_green.png',
+                    'image/human.gif',
+                    'image/human1.png',
+                    'image/robot_1.webm',
+                    'image/robot_1_1.webm',
+                    'image/robot_2.webm',
+                    'image/robot_2_1.webm',
+                    'image/robot_end1.webm',
+                    'SentyWatermelon.ttf'
+                ];
+
+                this.totalResources = this.resourceList.length;
+            }
+
+            updateProgress() {
+                const percentage = Math.round((this.loadedResources / this.totalResources) * 100);
+                this.loadingBar.style.width = percentage + '%';
+                this.loadingPercentage.textContent = percentage + '%';
+
+                // 更新糖果推动器位置 - 在进度条内部移动
+                const candyPusher = document.getElementById('candyPusher');
+                const containerWidth = 384; // loading-container内部宽度 (400 - 16px padding)
+                const candyWidth = 40; // 糖果宽度
+                const maxPosition = containerWidth - candyWidth; // 最大位置
+                const candyPosition = Math.max(0, (percentage / 100) * maxPosition);
+                candyPusher.style.left = candyPosition + 'px';
+
+                if (percentage < 30) {
+                    this.loadingText.textContent = '正在加载游戏资源...';
+                } else if (percentage < 60) {
+                    this.loadingText.textContent = '正在加载糖果图片...';
+                } else if (percentage < 90) {
+                    this.loadingText.textContent = '正在加载角色动画...';
+                } else {
+                    this.loadingText.textContent = '即将进入游戏...';
+                }
+
+                if (this.loadedResources >= this.totalResources) {
+                    setTimeout(() => {
+                        this.hideLoadingScreen();
+                    }, 2500);
+                }
+            }
+
+            hideLoadingScreen() {
+                this.loadingScreen.classList.add('fade-out');
+                setTimeout(() => {
+                    this.loadingScreen.style.display = 'none';
+                    // 加载完成后显示全屏提示
+                    this.showFullscreenPrompt();
+                }, 500);
+            }
+
+            showFullscreenPrompt() {
+                const fullscreenPrompt = document.getElementById('fullscreenPrompt');
+                if (fullscreenPrompt) {
+                    fullscreenPrompt.style.display = 'flex';
+                }
+            }
+
+            loadResources() {
+                this.resourceList.forEach(src => {
+                    if (src.endsWith('.webm')) {
+                        // 加载视频
+                        const video = document.createElement('video');
+                        video.onloadeddata = () => {
+                            this.loadedResources++;
+                            this.updateProgress();
+                        };
+                        video.onerror = () => {
+                            this.loadedResources++;
+                            this.updateProgress();
+                        };
+                        video.src = src;
+                    } else if (src.endsWith('.ttf')) {
+                        // 加载字体
+                        const font = new FontFace('SentyWatermelon', `url(${src})`);
+                        font.load().then(() => {
+                            document.fonts.add(font);
+                            this.loadedResources++;
+                            this.updateProgress();
+                        }).catch(() => {
+                            this.loadedResources++;
+                            this.updateProgress();
+                        });
+                    } else {
+                        // 加载图片
+                        const img = new Image();
+                        img.onload = () => {
+                            this.loadedResources++;
+                            this.updateProgress();
+                        };
+                        img.onerror = () => {
+                            this.loadedResources++;
+                            this.updateProgress();
+                        };
+                        img.src = src;
+                    }
+                });
+            }
+        }
+
         // 全屏和音乐管理
         document.addEventListener('DOMContentLoaded', () => {
-            // 显示全屏提示
+            // 初始化资源加载器
+            const loader = new ResourceLoader();
+            loader.loadResources();
+
+            // 全屏和音乐管理（不立即显示全屏提示）
             const fullscreenPrompt = document.getElementById('fullscreenPrompt');
             const enterFullscreenBtn = document.getElementById('enterFullscreenBtn');
             const skipFullscreenBtn = document.getElementById('skipFullscreenBtn');
             const bgMusic = document.getElementById('bgMusic');
-
-            // 显示全屏提示
-            fullscreenPrompt.style.display = 'flex';
 
             // 播放音乐的函数
             function startMusic() {
