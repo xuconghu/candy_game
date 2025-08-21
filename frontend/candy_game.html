@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>糖果游戏</title>
+    <!-- API客户端 -->
+    <script src="js/api-client.js"></script>
+    <style>
+        @font-face {
+            font-family: 'SentyWatermelon';
+            src: url('SentyWatermelon.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: url('image/background.png') center center / cover no-repeat;
+            font-family: 'SentyWatermelon', 'Comic Sans MS', cursive, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .game-container {
+            background: transparent;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            margin: 10px;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 100px;
+        }
+
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            gap: 8px;
+            background: transparent;
+            padding: 20px;
+            max-width: 1000px;
+            width: 100%;
+            aspect-ratio: 8/5;
+            max-height: 560px;
+        }
+
+        .candy {
+            width: 100%;
+            height: 100%;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background-size: cover;
+            background-position: center;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .candy:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .candy.selected {
+            border: 3px solid #FFD700;
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+        }
+
+        .candy.red { background-image: url('image/red.png'); }
+        .candy.blue { background-image: url('image/blue.png'); }
+        .candy.yellow { background-image: url('image/yellow.png'); }
+        .candy.pink { background-image: url('image/pink.png'); }
+        .candy.light_green { background-image: url('image/light_green.png'); }
+        .candy.deep_green { background-image: url('image/deep_green.png'); }
+
+        .score-board {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 1000px;
+            margin-bottom: 20px;
+            padding: 0 20px;
+        }
+
+        .score, .moves, .timer {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .game-over {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .game-over-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .game-over h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 32px;
+        }
+
+        .game-over p {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 18px;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .login-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+        }
+
+        .login-panel input {
+            margin: 5px 0;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            width: 150px;
+        }
+
+        .login-panel button {
+            background: #4ECDC4;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 2px;
+        }
+
+        .user-info {
+            color: #333;
+            font-weight: bold;
+        }
+
+        .leaderboard {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+            max-width: 250px;
+        }
+
+        .leaderboard h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            padding: 5px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .admin-link {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #FF6B6B;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .admin-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 10px;
+                padding-top: 50px;
+            }
+            
+            .game-grid {
+                padding: 10px;
+                gap: 4px;
+            }
+            
+            .score-board {
+                flex-direction: column;
+                gap: 10px;
+                margin-bottom: 10px;
+            }
+            
+            .login-panel, .leaderboard {
+                position: relative;
+                top: auto;
+                left: auto;
+                right: auto;
+                margin: 10px;
+                width: calc(100% - 40px);
+                max-width: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 登录面板 -->
+    <div class="login-panel" id="loginPanel">
+        <div id="loginForm">
+            <input type="text" id="usernameInput" placeholder="用户名" maxlength="20">
+            <br>
+            <button onclick="login()">登录</button>
+            <button onclick="register()">注册</button>
+        </div>
+        <div id="userInfo" style="display: none;">
+            <div class="user-info">
+                <span id="currentUser"></span>
+                <button onclick="logout()">退出</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 排行榜 -->
+    <div class="leaderboard">
+        <h3>🏆 排行榜</h3>
+        <div id="leaderboardList">
+            <div class="leaderboard-item">
+                <span>加载中...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 游戏容器 -->
+    <div class="game-container">
+        <!-- 计分板 -->
+        <div class="score-board">
+            <div class="score">得分: <span id="score">0</span></div>
+            <div class="moves">剩余步数: <span id="moves">30</span></div>
+            <div class="timer">时间: <span id="timer">00:00</span></div>
+        </div>
+
+        <!-- 游戏网格 -->
+        <div class="game-grid" id="gameGrid"></div>
+    </div>
+
+    <!-- 游戏结束弹窗 -->
+    <div class="game-over" id="gameOver">
+        <div class="game-over-content">
+            <h2 id="gameOverTitle">游戏结束</h2>
+            <p id="gameOverMessage">你的得分: <span id="finalScore">0</span></p>
+            <button class="btn" onclick="restartGame()">重新开始</button>
+            <button class="btn" onclick="closeGameOver()">继续游戏</button>
+        </div>
+    </div>
+
+    <!-- 管理后台链接 -->
+    <a href="admin-dashboard.html" class="admin-link">管理后台</a>
+
+    <script>
+        // 游戏状态
+        let gameState = {
+            grid: [],
+            score: 0,
+            moves: 30,
+            selectedCandy: null,
+            gameStartTime: null,
+            gameTimer: null,
+            currentUser: null
+        };
+
+        // 糖果类型
+        const candyTypes = ['red', 'blue', 'yellow', 'pink', 'light_green', 'deep_green'];
+
+        // 初始化游戏
+        function initGame() {
+            createGrid();
+            updateDisplay();
+            startTimer();
+            loadLeaderboard();
+        }
+
+        // 创建游戏网格
+        function createGrid() {
+            const grid = document.getElementById('gameGrid');
+            grid.innerHTML = '';
+            gameState.grid = [];
+
+            for (let row = 0; row < 5; row++) {
+                gameState.grid[row] = [];
+                for (let col = 0; col < 8; col++) {
+                    const candy = document.createElement('div');
+                    candy.className = 'candy';
+                    candy.dataset.row = row;
+                    candy.dataset.col = col;
+                    candy.addEventListener('click', () => selectCandy(row, col));
+                    
+                    const candyType = getRandomCandyType();
+                    candy.classList.add(candyType);
+                    gameState.grid[row][col] = {
+                        type: candyType,
+                        element: candy
+                    };
+                    
+                    grid.appendChild(candy);
+                }
+            }
+        }
+
+        // 获取随机糖果类型
+        function getRandomCandyType() {
+            return candyTypes[Math.floor(Math.random() * candyTypes.length)];
+        }
+
+        // 选择糖果
+        function selectCandy(row, col) {
+            if (gameState.moves <= 0) return;
+
+            const candy = gameState.grid[row][col];
+            
+            if (gameState.selectedCandy) {
+                // 如果已经选择了一个糖果，尝试交换
+                const selected = gameState.selectedCandy;
+                
+                if (isAdjacent(selected.row, selected.col, row, col)) {
+                    swapCandies(selected.row, selected.col, row, col);
+                    clearSelection();
+                    gameState.moves--;
+                    updateDisplay();
+                    
+                    setTimeout(() => {
+                        checkMatches();
+                    }, 300);
+                } else {
+                    // 选择新的糖果
+                    clearSelection();
+                    selectNewCandy(row, col);
+                }
+            } else {
+                // 选择第一个糖果
+                selectNewCandy(row, col);
+            }
+        }
+
+        // 选择新糖果
+        function selectNewCandy(row, col) {
+            gameState.selectedCandy = { row, col };
+            gameState.grid[row][col].element.classList.add('selected');
+        }
+
+        // 清除选择
+        function clearSelection() {
+            if (gameState.selectedCandy) {
+                const { row, col } = gameState.selectedCandy;
+                gameState.grid[row][col].element.classList.remove('selected');
+                gameState.selectedCandy = null;
+            }
+        }
+
+        // 检查是否相邻
+        function isAdjacent(row1, col1, row2, col2) {
+            const rowDiff = Math.abs(row1 - row2);
+            const colDiff = Math.abs(col1 - col2);
+            return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
+        }
+
+        // 交换糖果
+        function swapCandies(row1, col1, row2, col2) {
+            const candy1 = gameState.grid[row1][col1];
+            const candy2 = gameState.grid[row2][col2];
+            
+            // 交换类型
+            const tempType = candy1.type;
+            candy1.type = candy2.type;
+            candy2.type = tempType;
+            
+            // 更新显示
+            candy1.element.className = `candy ${candy1.type}`;
+            candy2.element.className = `candy ${candy2.type}`;
+        }
+
+        // 检查匹配
+        function checkMatches() {
+            const matches = findMatches();
+            if (matches.length > 0) {
+                removeMatches(matches);
+                gameState.score += matches.length * 10;
+                updateDisplay();
+                
+                setTimeout(() => {
+                    dropCandies();
+                    setTimeout(() => {
+                        fillEmptySpaces();
+                        setTimeout(() => {
+                            checkMatches(); // 递归检查新的匹配
+                        }, 300);
+                    }, 300);
+                }, 300);
+            }
+        }
+
+        // 查找匹配
+        function findMatches() {
+            const matches = [];
+            
+            // 检查水平匹配
+            for (let row = 0; row < 5; row++) {
+                for (let col = 0; col < 6; col++) {
+                    const type = gameState.grid[row][col].type;
+                    if (type && 
+                        gameState.grid[row][col + 1].type === type && 
+                        gameState.grid[row][col + 2].type === type) {
+                        
+                        let matchLength = 3;
+                        while (col + matchLength < 8 && gameState.grid[row][col + matchLength].type === type) {
+                            matchLength++;
+                        }
+                        
+                        for (let i = 0; i < matchLength; i++) {
+                            matches.push({ row, col: col + i });
+                        }
+                        col += matchLength - 1;
+                    }
+                }
+            }
+            
+            // 检查垂直匹配
+            for (let col = 0; col < 8; col++) {
+                for (let row = 0; row < 3; row++) {
+                    const type = gameState.grid[row][col].type;
+                    if (type && 
+                        gameState.grid[row + 1][col].type === type && 
+                        gameState.grid[row + 2][col].type === type) {
+                        
+                        let matchLength = 3;
+                        while (row + matchLength < 5 && gameState.grid[row + matchLength][col].type === type) {
+                            matchLength++;
+                        }
+                        
+                        for (let i = 0; i < matchLength; i++) {
+                            matches.push({ row: row + i, col });
+                        }
+                        row += matchLength - 1;
+                    }
+                }
+            }
+            
+            return matches;
+        }
+
+        // 移除匹配的糖果
+        function removeMatches(matches) {
+            matches.forEach(match => {
+                const { row, col } = match;
+                gameState.grid[row][col].type = null;
+                gameState.grid[row][col].element.style.opacity = '0';
+            });
+        }
+
+        // 糖果下落
+        function dropCandies() {
+            for (let col = 0; col < 8; col++) {
+                for (let row = 4; row >= 0; row--) {
+                    if (!gameState.grid[row][col].type) {
+                        // 找到上面第一个非空的糖果
+                        for (let upperRow = row - 1; upperRow >= 0; upperRow--) {
+                            if (gameState.grid[upperRow][col].type) {
+                                // 移动糖果
+                                gameState.grid[row][col].type = gameState.grid[upperRow][col].type;
+                                gameState.grid[row][col].element.className = `candy ${gameState.grid[row][col].type}`;
+                                gameState.grid[row][col].element.style.opacity = '1';
+                                
+                                gameState.grid[upperRow][col].type = null;
+                                gameState.grid[upperRow][col].element.style.opacity = '0';
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 填充空白位置
+        function fillEmptySpaces() {
+            for (let row = 0; row < 5; row++) {
+                for (let col = 0; col < 8; col++) {
+                    if (!gameState.grid[row][col].type) {
+                        const newType = getRandomCandyType();
+                        gameState.grid[row][col].type = newType;
+                        gameState.grid[row][col].element.className = `candy ${newType}`;
+                        gameState.grid[row][col].element.style.opacity = '1';
+                    }
+                }
+            }
+        }
+
+        // 更新显示
+        function updateDisplay() {
+            document.getElementById('score').textContent = gameState.score;
+            document.getElementById('moves').textContent = gameState.moves;
+            
+            if (gameState.moves <= 0) {
+                endGame();
+            }
+        }
+
+        // 开始计时器
+        function startTimer() {
+            gameState.gameStartTime = Date.now();
+            gameState.gameTimer = setInterval(updateTimer, 1000);
+        }
+
+        // 更新计时器
+        function updateTimer() {
+            const elapsed = Math.floor((Date.now() - gameState.gameStartTime) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            document.getElementById('timer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // 结束游戏
+        function endGame() {
+            clearInterval(gameState.gameTimer);
+            document.getElementById('finalScore').textContent = gameState.score;
+            document.getElementById('gameOver').style.display = 'flex';
+            
+            // 保存游戏记录
+            if (gameState.currentUser) {
+                saveGameRecord();
+            }
+        }
+
+        // 重新开始游戏
+        function restartGame() {
+            gameState.score = 0;
+            gameState.moves = 30;
+            gameState.selectedCandy = null;
+            clearInterval(gameState.gameTimer);
+            
+            document.getElementById('gameOver').style.display = 'none';
+            initGame();
+        }
+
+        // 关闭游戏结束弹窗
+        function closeGameOver() {
+            document.getElementById('gameOver').style.display = 'none';
+        }
+
+        // 登录
+        async function login() {
+            const username = document.getElementById('usernameInput').value.trim();
+            if (!username) {
+                alert('请输入用户名');
+                return;
+            }
+
+            try {
+                const response = await apiClient.login(username);
+                if (response.success) {
+                    gameState.currentUser = username;
+                    document.getElementById('currentUser').textContent = username;
+                    document.getElementById('loginForm').style.display = 'none';
+                    document.getElementById('userInfo').style.display = 'block';
+                    loadLeaderboard();
+                } else {
+                    alert(response.message || '登录失败');
+                }
+            } catch (error) {
+                console.error('登录错误:', error);
+                alert('登录失败，请检查网络连接');
+            }
+        }
+
+        // 注册
+        async function register() {
+            const username = document.getElementById('usernameInput').value.trim();
+            if (!username) {
+                alert('请输入用户名');
+                return;
+            }
+
+            try {
+                const response = await apiClient.register(username);
+                if (response.success) {
+                    alert('注册成功！');
+                    login(); // 自动登录
+                } else {
+                    alert(response.message || '注册失败');
+                }
+            } catch (error) {
+                console.error('注册错误:', error);
+                alert('注册失败，请检查网络连接');
+            }
+        }
+
+        // 退出登录
+        function logout() {
+            gameState.currentUser = null;
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('userInfo').style.display = 'none';
+            document.getElementById('usernameInput').value = '';
+        }
+
+        // 保存游戏记录
+        async function saveGameRecord() {
+            if (!gameState.currentUser) return;
+
+            const gameData = {
+                username: gameState.currentUser,
+                score: gameState.score,
+                moves_used: 30 - gameState.moves,
+                duration: Math.floor((Date.now() - gameState.gameStartTime) / 1000)
+            };
+
+            try {
+                const response = await apiClient.saveGameRecord(gameData);
+                if (response.success) {
+                    console.log('游戏记录保存成功');
+                    loadLeaderboard(); // 刷新排行榜
+                }
+            } catch (error) {
+                console.error('保存游戏记录失败:', error);
+            }
+        }
+
+        // 加载排行榜
+        async function loadLeaderboard() {
+            try {
+                const response = await apiClient.getLeaderboard();
+                if (response.success) {
+                    displayLeaderboard(response.data);
+                }
+            } catch (error) {
+                console.error('加载排行榜失败:', error);
+                document.getElementById('leaderboardList').innerHTML = 
+                    '<div class="leaderboard-item"><span>加载失败</span></div>';
+            }
+        }
+
+        // 显示排行榜
+        function displayLeaderboard(leaderboard) {
+            const container = document.getElementById('leaderboardList');
+            
+            if (!leaderboard || leaderboard.length === 0) {
+                container.innerHTML = '<div class="leaderboard-item"><span>暂无记录</span></div>';
+                return;
+            }
+
+            container.innerHTML = leaderboard.slice(0, 5).map((record, index) => `
+                <div class="leaderboard-item">
+                    <span>${index + 1}. ${record.username}</span>
+                    <span>${record.best_score}</span>
+                </div>
+            `).join('');
+        }
+
+        // 页面加载完成后初始化游戏
+        document.addEventListener('DOMContentLoaded', function() {
+            initGame();
+        });
+    </script>
+</body>
+</html>
