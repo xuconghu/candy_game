@@ -1806,6 +1806,105 @@
             transform: none;
         }
 
+        /* 模态框样式 */
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #FFE4E1 0%, #FFF0F5 50%, #E6E6FA 100%);
+            border-radius: 20px;
+            padding: 0;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border: 3px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #FFB6C1 0%, #FFC0CB 100%);
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: #333;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .close {
+            color: #333;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .close:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        .modal-body {
+            padding: 20px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .user-list-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .user-list-table th,
+        .user-list-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .user-list-table th {
+            background: linear-gradient(135deg, #ADD8E6 0%, #87CEEB 100%);
+            color: #333;
+            font-weight: bold;
+        }
+
+        .user-list-table tr:hover {
+            background-color: rgba(255, 182, 193, 0.2);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 18px;
+            color: #666;
+        }
+
         .privacy-notice {
             font-size: 14px;
             color: #333;
@@ -2751,10 +2850,26 @@
                     <div class="login-buttons">
                         <button id="registerBtn" class="login-btn primary">注册</button>
                         <button id="backToQueryBtn" class="login-btn secondary">返回查询</button>
+                        <button id="viewUsersBtn" class="login-btn secondary">查看用户列表</button>
                     </div>
 
                     <!-- 注册结果消息显示区域 -->
                     <div id="registerMessage" class="query-message" style="display: none;"></div>
+                </div>
+            </div>
+
+            <!-- 用户列表模态框 -->
+            <div id="userListModal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>用户列表</h3>
+                        <span class="close" id="closeUserListModal">&times;</span>
+                    </div>
+                    <div class="modal-body">
+                        <div id="userListContent">
+                            <div class="loading">正在加载用户列表...</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -3520,6 +3635,26 @@
                     await this.registerUser();
                 });
 
+                // 查看用户列表按钮事件
+                const viewUsersBtn = document.getElementById('viewUsersBtn');
+                viewUsersBtn.addEventListener('click', async () => {
+                    await this.showUserList();
+                });
+
+                // 关闭用户列表模态框
+                const closeUserListModal = document.getElementById('closeUserListModal');
+                const userListModal = document.getElementById('userListModal');
+                closeUserListModal.addEventListener('click', () => {
+                    userListModal.style.display = 'none';
+                });
+
+                // 点击模态框外部关闭
+                userListModal.addEventListener('click', (e) => {
+                    if (e.target === userListModal) {
+                        userListModal.style.display = 'none';
+                    }
+                });
+
                 // 输入框回车事件
                 queryName.addEventListener('keypress', (e) => {
                     if (e.key === 'Enter') {
@@ -3765,6 +3900,75 @@
                 document.getElementById('loginContainer').style.display = 'none';
                 document.getElementById('robotSelection').style.display = 'none';
                 this.showRobotIntroduction();
+            }
+
+            // 显示用户列表
+            async showUserList() {
+                const userListModal = document.getElementById('userListModal');
+                const userListContent = document.getElementById('userListContent');
+
+                // 显示模态框
+                userListModal.style.display = 'flex';
+
+                // 显示加载状态
+                userListContent.innerHTML = '<div class="loading">正在加载用户列表...</div>';
+
+                try {
+                    // 调用API获取用户列表
+                    const response = await fetch('http://106.15.184.68:3000/api/users');
+                    const result = await response.json();
+
+                    if (result.success && result.data && result.data.length > 0) {
+                        // 构建用户列表表格
+                        let tableHTML = `
+                            <table class="user-list-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>姓名</th>
+                                        <th>性别</th>
+                                        <th>身份证号</th>
+                                        <th>支付宝账号</th>
+                                        <th>注册日期</th>
+                                        <th>注册时间</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                        `;
+
+                        result.data.forEach(user => {
+                            const genderText = user.gender === 'male' ? '男' : user.gender === 'female' ? '女' : user.gender || '-';
+                            const registerTime = user.registerTime ? new Date(user.registerTime).toLocaleString('zh-CN') : '-';
+
+                            tableHTML += `
+                                <tr>
+                                    <td>${user.id}</td>
+                                    <td>${user.name || '-'}</td>
+                                    <td>${genderText}</td>
+                                    <td>${user.idNumber || '-'}</td>
+                                    <td>${user.alipay || '-'}</td>
+                                    <td>${user.registrationDate || '-'}</td>
+                                    <td>${registerTime}</td>
+                                </tr>
+                            `;
+                        });
+
+                        tableHTML += `
+                                </tbody>
+                            </table>
+                            <div style="margin-top: 15px; text-align: center; color: #666;">
+                                共 ${result.data.length} 个用户
+                            </div>
+                        `;
+
+                        userListContent.innerHTML = tableHTML;
+                    } else {
+                        userListContent.innerHTML = '<div class="loading">暂无用户数据</div>';
+                    }
+                } catch (error) {
+                    console.error('获取用户列表失败:', error);
+                    userListContent.innerHTML = '<div class="loading" style="color: #ff6b6b;">获取用户列表失败，请检查网络连接</div>';
+                }
             }
 
             // 模拟增加用户天数的方法（用于测试）
