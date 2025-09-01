@@ -6621,15 +6621,21 @@
             }
 
             playRobotGif() {
+                console.log('🤖 播放机器人GIF动画');
                 const robotImg = document.getElementById('robotImg');
                 if (robotImg) {
-                    // 切换到GIF
-                    robotImg.src = 'image/robot.gif';
+                    console.log('✅ 找到机器人图片元素，当前src:', robotImg.src);
+                    // 切换到GIF，添加时间戳防止缓存
+                    robotImg.src = 'image/robot.gif?' + Date.now();
+                    console.log('🎬 已切换到GIF:', robotImg.src);
 
                     // 1.5秒后切换回静态图片
                     setTimeout(() => {
                         robotImg.src = 'image/robot.png';
+                        console.log('🔄 已切换回静态图片:', robotImg.src);
                     }, 1500);
+                } else {
+                    console.error('❌ 未找到机器人图片元素');
                 }
             }
 
