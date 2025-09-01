@@ -67,7 +67,7 @@
 
         .loading-subtitle {
             font-size: 16px;
-            color: rgba(255, 255, 255, 0.9);
+            color: #000000;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
             margin-bottom: 40px;
             text-align: center;
@@ -3388,7 +3388,6 @@
                     const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
                     formData.append('csvFile', blob, filename);
                     formData.append('userName', this.gameData.userInfo?.name || '');
-                    formData.append('userGender', this.gameData.userInfo?.gender || '');
                     formData.append('sessionId', this.gameData.sessionId);
                     formData.append('uploadTime', new Date().toISOString());
 
@@ -3590,11 +3589,17 @@
                 csv += '开始时间,' + this.gameData.startTime + '\n';
                 csv += '结束时间,' + (this.gameData.endTime || '') + '\n';
                 csv += '用户姓名,' + (this.gameData.userInfo?.name || '') + '\n';
-                csv += '用户性别,' + (this.gameData.userInfo?.gender || '') + '\n';
-                csv += '身份证号,' + (this.gameData.userInfo?.idNumber || '') + '\n';
-                csv += '支付宝账号,' + (this.gameData.userInfo?.alipay || '') + '\n';
-                csv += '选择的机器人,' + (this.gameData.selectedRobot || '') + '\n';
-                csv += '最终得分,' + this.gameData.finalScore + '\n';
+                // 将机器人代码转换为中文名称
+                let robotName = '';
+                if (this.gameData.selectedRobot === 'robot1') {
+                    robotName = '波波';
+                } else if (this.gameData.selectedRobot === 'robot2') {
+                    robotName = '可乐方';
+                } else {
+                    robotName = this.gameData.selectedRobot || '';
+                }
+                csv += '选择的机器人,' + robotName + '\n';
+                csv += '最终得分,' + (this.gameData.finalScore || '') + '\n';
                 csv += '用户平均评分,' + (this.gameData.userRating || '') + '\n';
                 csv += '\n';
 
@@ -4500,8 +4505,25 @@
                     ];
                 }
 
+                // 确保视频属性设置正确
+                endVideo.muted = true;
+                endVideo.autoplay = true;
+                endVideo.loop = true;
+                endVideo.load(); // 重新加载视频
+
                 // 播放视频
-                endVideo.play().catch(e => console.log('结尾对话视频播放失败'));
+                const playPromise = endVideo.play();
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        console.log('结尾对话视频播放成功');
+                    }).catch(e => {
+                        console.error('结尾对话视频播放失败:', e);
+                        // 如果播放失败，尝试用户交互后播放
+                        document.addEventListener('click', () => {
+                            endVideo.play().catch(err => console.error('用户交互后视频播放仍失败:', err));
+                        }, { once: true });
+                    });
+                }
             }
 
             showEndDialogMessage() {
