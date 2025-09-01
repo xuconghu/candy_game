@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>糖果游戏 - 数据管理后台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b9d, #ffa726);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card h3 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .number {
+            font-size: 3em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .controls {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .data-section {
+            padding: 30px;
+        }
+
+        .data-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .data-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+        }
+
+        .data-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status.online {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.offline {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .refresh-time {
+            text-align: center;
+            color: #666;
+            margin-top: 20px;
+            font-style: italic;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🍭 糖果游戏数据中心</h1>
+            <p>实时监控游戏数据和用户活动</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>👥 总用户数</h3>
+                <div class="number" id="totalUsers">-</div>
+                <p>注册用户</p>
+            </div>
+            <div class="stat-card">
+                <h3>🎮 游戏场次</h3>
+                <div class="number" id="totalGames">-</div>
+                <p>总游戏数</p>
+            </div>
+            <div class="stat-card">
+                <h3>🏆 平均分数</h3>
+                <div class="number" id="avgScore">-</div>
+                <p>平均得分</p>
+            </div>
+            <div class="stat-card">
+                <h3>⚡ 服务状态</h3>
+                <div class="number" id="serverStatus">-</div>
+                <p>后端服务</p>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn" onclick="refreshData()">🔄 刷新数据</button>
+            <button class="btn" onclick="exportData()">📊 导出数据</button>
+            <button class="btn" onclick="clearData()">🗑️ 清空数据</button>
+            <button class="btn" onclick="openGame()">🎮 打开游戏</button>
+        </div>
+
+        <div class="data-section">
+            <h2>👥 用户列表</h2>
+            <div id="usersLoading" class="loading">正在加载用户数据...</div>
+            <table class="data-table" id="usersTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>用户名</th>
+                        <th>年龄</th>
+                        <th>性别</th>
+                        <th>注册时间</th>
+                    </tr>
+                </thead>
+                <tbody id="usersBody">
+                </tbody>
+            </table>
+        </div>
+
+        <div class="data-section">
+            <h2>🎮 游戏记录</h2>
+            <div id="gamesLoading" class="loading">正在加载游戏数据...</div>
+            <table class="data-table" id="gamesTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>游戏ID</th>
+                        <th>用户ID</th>
+                        <th>分数</th>
+                        <th>游戏时长</th>
+                        <th>机器人类型</th>
+                        <th>游戏时间</th>
+                    </tr>
+                </thead>
+                <tbody id="gamesBody">
+                </tbody>
+            </table>
+        </div>
+
+        <div class="refresh-time">
+            最后更新时间: <span id="lastUpdate">-</span>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3000/api';
+        
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshData();
+            // 每30秒自动刷新
+            setInterval(refreshData, 30000);
+        });
+
+        // 刷新所有数据
+        async function refreshData() {
+            await Promise.all([
+                checkServerStatus(),
+                loadUsers(),
+                loadGames(),
+                updateStats()
+            ]);
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleString();
+        }
+
+        // 检查服务器状态
+        async function checkServerStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                document.getElementById('serverStatus').textContent = '✅';
+                document.getElementById('serverStatus').style.color = '#28a745';
+            } catch (error) {
+                document.getElementById('serverStatus').textContent = '❌';
+                document.getElementById('serverStatus').style.color = '#dc3545';
+            }
+        }
+
+        // 加载用户数据
+        async function loadUsers() {
+            try {
+                const response = await fetch(`${API_BASE}/users`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayUsers(data.users || []);
+                } else {
+                    showError('用户数据加载失败');
+                }
+            } catch (error) {
+                showError('无法连接到服务器');
+            }
+        }
+
+        // 加载游戏数据
+        async function loadGames() {
+            try {
+                const response = await fetch(`${API_BASE}/games`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayGames(data.games || []);
+                } else {
+                    showError('游戏数据加载失败');
+                }
+            } catch (error) {
+                showError('无法连接到服务器');
+            }
+        }
+
+        // 显示用户数据
+        function displayUsers(users) {
+            const tbody = document.getElementById('usersBody');
+            const table = document.getElementById('usersTable');
+            const loading = document.getElementById('usersLoading');
+            
+            tbody.innerHTML = '';
+            
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #666;">暂无用户数据</td></tr>';
+            } else {
+                users.forEach(user => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${user.id}</td>
+                        <td>${user.username || '-'}</td>
+                        <td>${user.age || '-'}</td>
+                        <td>${user.gender || '-'}</td>
+                        <td>${new Date(user.createdAt).toLocaleString()}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+            
+            loading.style.display = 'none';
+            table.style.display = 'table';
+        }
+
+        // 显示游戏数据
+        function displayGames(games) {
+            const tbody = document.getElementById('gamesBody');
+            const table = document.getElementById('gamesTable');
+            const loading = document.getElementById('gamesLoading');
+            
+            tbody.innerHTML = '';
+            
+            if (games.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #666;">暂无游戏数据</td></tr>';
+            } else {
+                games.forEach(game => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${game.id}</td>
+                        <td>${game.userId || '-'}</td>
+                        <td>${game.score || '-'}</td>
+                        <td>${game.duration || '-'}秒</td>
+                        <td>${game.robotType || '-'}</td>
+                        <td>${new Date(game.createdAt).toLocaleString()}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+            
+            loading.style.display = 'none';
+            table.style.display = 'table';
+        }
+
+        // 更新统计数据
+        async function updateStats() {
+            try {
+                const [usersRes, gamesRes] = await Promise.all([
+                    fetch(`${API_BASE}/users`),
+                    fetch(`${API_BASE}/games`)
+                ]);
+                
+                const usersData = await usersRes.json();
+                const gamesData = await gamesRes.json();
+                
+                const users = usersData.users || [];
+                const games = gamesData.games || [];
+                
+                document.getElementById('totalUsers').textContent = users.length;
+                document.getElementById('totalGames').textContent = games.length;
+                
+                // 计算平均分数
+                if (games.length > 0) {
+                    const avgScore = games.reduce((sum, game) => sum + (game.score || 0), 0) / games.length;
+                    document.getElementById('avgScore').textContent = Math.round(avgScore);
+                } else {
+                    document.getElementById('avgScore').textContent = '0';
+                }
+            } catch (error) {
+                console.error('更新统计数据失败:', error);
+            }
+        }
+
+        // 显示错误信息
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error';
+            errorDiv.textContent = message;
+            document.querySelector('.container').appendChild(errorDiv);
+            
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 5000);
+        }
+
+        // 导出数据
+        function exportData() {
+            alert('导出功能开发中...');
+        }
+
+        // 清空数据
+        function clearData() {
+            if (confirm('确定要清空所有数据吗？此操作不可恢复！')) {
+                alert('清空功能开发中...');
+            }
+        }
+
+        // 打开游戏
+        function openGame() {
+            window.open('http://localhost:8080/candy_game.html', '_blank');
+        }
+    </script>
+</body>
+</html>

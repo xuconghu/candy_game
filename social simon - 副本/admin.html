@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>糖果游戏 - 后端管理系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b9d, #c44569);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .nav-tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .nav-tab {
+            flex: 1;
+            padding: 15px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            color: #6c757d;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+
+        .nav-tab:hover {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .nav-tab.active {
+            color: #ff6b9d;
+            border-bottom-color: #ff6b9d;
+            background: white;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-card h3 {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-card .number {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .refresh-btn {
+            background: linear-gradient(135deg, #ff6b9d, #c44569);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 107, 157, 0.3);
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 157, 0.4);
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .data-table th {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .data-table td {
+            padding: 15px;
+            border-bottom: 1px solid #f1f3f4;
+            vertical-align: top;
+        }
+
+        .data-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .badge.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #6c757d;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #ff6b9d;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid #f5c6cb;
+        }
+
+        .json-viewer {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .action-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            margin: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn:hover {
+            background: #218838;
+        }
+
+        .action-btn.danger {
+            background: #dc3545;
+        }
+
+        .action-btn.danger:hover {
+            background: #c82333;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 12px 20px;
+            border: 2px solid #dee2e6;
+            border-radius: 25px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .search-box:focus {
+            border-color: #ff6b9d;
+            box-shadow: 0 0 10px rgba(255, 107, 157, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🍭 糖果游戏管理系统</h1>
+            <p>实时监控和管理游戏数据</p>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showTab('dashboard')">📊 仪表板</button>
+            <button class="nav-tab" onclick="showTab('users')">👥 用户管理</button>
+            <button class="nav-tab" onclick="showTab('games')">🎮 游戏记录</button>
+            <button class="nav-tab" onclick="showTab('sessions')">🔄 游戏会话</button>
+            <button class="nav-tab" onclick="showTab('events')">📝 游戏事件</button>
+        </div>
+
+        <div class="content">
+            <!-- 仪表板 -->
+            <div id="dashboard" class="tab-content active">
+                <button class="refresh-btn" onclick="loadDashboard()">🔄 刷新数据</button>
+                <div class="stats-grid" id="statsGrid">
+                    <div class="loading">正在加载统计数据...</div>
+                </div>
+            </div>
+
+            <!-- 用户管理 -->
+            <div id="users" class="tab-content">
+                <button class="refresh-btn" onclick="loadUsers()">🔄 刷新用户</button>
+                <input type="text" class="search-box" id="userSearch" placeholder="🔍 搜索用户名..." onkeyup="filterUsers()">
+                <div id="usersContent">
+                    <div class="loading">正在加载用户数据...</div>
+                </div>
+            </div>
+
+            <!-- 游戏记录 -->
+            <div id="games" class="tab-content">
+                <button class="refresh-btn" onclick="loadGames()">🔄 刷新记录</button>
+                <input type="text" class="search-box" id="gameSearch" placeholder="🔍 搜索游戏记录..." onkeyup="filterGames()">
+                <div id="gamesContent">
+                    <div class="loading">正在加载游戏记录...</div>
+                </div>
+            </div>
+
+            <!-- 游戏会话 -->
+            <div id="sessions" class="tab-content">
+                <button class="refresh-btn" onclick="loadSessions()">🔄 刷新会话</button>
+                <div id="sessionsContent">
+                    <div class="loading">正在加载会话数据...</div>
+                </div>
+            </div>
+
+            <!-- 游戏事件 -->
+            <div id="events" class="tab-content">
+                <button class="refresh-btn" onclick="loadEvents()">🔄 刷新事件</button>
+                <div id="eventsContent">
+                    <div class="loading">正在加载事件数据...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API基础配置
+        const API_BASE = 'http://106.15.184.68/api';
+        
+        // 全局数据存储
+        let allUsers = [];
+        let allGames = [];
+        let allSessions = [];
+        let allEvents = [];
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboard();
+        });
+
+        // 切换标签页
+        function showTab(tabName) {
+            // 隐藏所有标签内容
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // 移除所有标签的激活状态
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 显示选中的标签内容
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+            
+            // 根据标签加载对应数据
+            switch(tabName) {
+                case 'dashboard':
+                    loadDashboard();
+                    break;
+                case 'users':
+                    loadUsers();
+                    break;
+                case 'games':
+                    loadGames();
+                    break;
+                case 'sessions':
+                    loadSessions();
+                    break;
+                case 'events':
+                    loadEvents();
+                    break;
+            }
+        }
+
+        // 通用API请求函数
+        async function apiRequest(endpoint) {
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`);
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || `HTTP ${response.status}`);
+                }
+                
+                return data;
+            } catch (error) {
+                console.error('API请求失败:', error);
+                throw error;
+            }
+        }
+
+        // 加载仪表板数据
+        async function loadDashboard() {
+            const statsGrid = document.getElementById('statsGrid');
+            statsGrid.innerHTML = '<div class="loading">正在加载统计数据...</div>';
+
+            try {
+                const stats = await apiRequest('/stats');
+
+                statsGrid.innerHTML = `
+                    <div class="stat-card">
+                        <h3>总用户数</h3>
+                        <div class="number">${stats.data.total_users}</div>
+                        <small>注册用户总数</small>
+                    </div>
+                    <div class="stat-card">
+                        <h3>游戏记录</h3>
+                        <div class="number">${stats.data.total_games}</div>
+                        <small>完成的游戏总数</small>
+                    </div>
+                    <div class="stat-card">
+                        <h3>游戏会话</h3>
+                        <div class="number">${stats.data.total_sessions}</div>
+                        <small>创建的会话总数</small>
+                    </div>
+                    <div class="stat-card">
+                        <h3>活跃会话</h3>
+                        <div class="number">${stats.data.active_sessions}</div>
+                        <small>当前活跃的会话</small>
+                    </div>
+                    <div class="stat-card">
+                        <h3>游戏事件</h3>
+                        <div class="number">${stats.data.total_events}</div>
+                        <small>记录的事件总数</small>
+                    </div>
+                `;
+            } catch (error) {
+                statsGrid.innerHTML = `<div class="error">加载统计数据失败: ${error.message}</div>`;
+            }
+        }
+
+        // 加载用户数据
+        async function loadUsers() {
+            const usersContent = document.getElementById('usersContent');
+            usersContent.innerHTML = '<div class="loading">正在加载用户数据...</div>';
+
+            try {
+                const users = await apiRequest('/users');
+                allUsers = users.data;
+                displayUsers(allUsers);
+            } catch (error) {
+                usersContent.innerHTML = `<div class="error">加载用户数据失败: ${error.message}</div>`;
+            }
+        }
+
+        // 显示用户数据
+        function displayUsers(users) {
+            const usersContent = document.getElementById('usersContent');
+
+            if (users.length === 0) {
+                usersContent.innerHTML = '<div class="loading">暂无用户数据</div>';
+                return;
+            }
+
+            const tableHTML = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>用户ID</th>
+                            <th>用户名</th>
+                            <th>注册时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${users.map(user => `
+                            <tr>
+                                <td><span class="badge info">${user.id}</span></td>
+                                <td><strong>${user.username}</strong></td>
+                                <td>${formatDate(user.created_at)}</td>
+                                <td>
+                                    <button class="action-btn" onclick="viewUserDetails(${user.id})">查看详情</button>
+                                    <button class="action-btn" onclick="viewUserStats(${user.id})">统计信息</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+
+            usersContent.innerHTML = tableHTML;
+        }
+
+        // 过滤用户
+        function filterUsers() {
+            const searchTerm = document.getElementById('userSearch').value.toLowerCase();
+            const filteredUsers = allUsers.filter(user =>
+                user.username.toLowerCase().includes(searchTerm) ||
+                user.id.toString().includes(searchTerm)
+            );
+            displayUsers(filteredUsers);
+        }
+
+        // 查看用户详情
+        async function viewUserDetails(userId) {
+            try {
+                const user = await apiRequest(`/users/${userId}`);
+                alert(`用户详情:\n\n用户ID: ${user.data.user_id}\n用户名: ${user.data.username}\n邮箱: ${user.data.email || '未设置'}\n注册时间: ${formatDate(user.data.created_at)}`);
+            } catch (error) {
+                alert(`获取用户详情失败: ${error.message}`);
+            }
+        }
+
+        // 查看用户统计
+        async function viewUserStats(userId) {
+            try {
+                const stats = await apiRequest(`/users/${userId}/stats`);
+                const games = await apiRequest(`/users/${userId}/games?limit=5`);
+
+                let message = `用户统计信息:\n\n`;
+                message += `总游戏次数: ${stats.data.total_games}\n`;
+                message += `总分数: ${stats.data.total_score}\n`;
+                message += `平均分数: ${stats.data.average_score}\n`;
+                message += `最高分数: ${stats.data.best_score}\n`;
+                message += `最后游戏时间: ${stats.data.last_played ? formatDate(stats.data.last_played) : '无'}\n\n`;
+
+                if (games.data.length > 0) {
+                    message += `最近游戏记录:\n`;
+                    games.data.forEach((game, index) => {
+                        message += `${index + 1}. 分数: ${game.score || 0}, 时间: ${formatDate(game.created_at)}\n`;
+                    });
+                }
+
+                alert(message);
+            } catch (error) {
+                alert(`获取用户统计失败: ${error.message}`);
+            }
+        }
+
+        // 加载游戏记录
+        async function loadGames() {
+            const gamesContent = document.getElementById('gamesContent');
+            gamesContent.innerHTML = '<div class="loading">正在加载游戏记录...</div>';
+
+            try {
+                const games = await apiRequest('/games');
+                allGames = games.data;
+                displayGames(allGames);
+            } catch (error) {
+                gamesContent.innerHTML = `<div class="error">加载游戏记录失败: ${error.message}</div>`;
+            }
+        }
+
+        // 显示游戏记录
+        function displayGames(games) {
+            const gamesContent = document.getElementById('gamesContent');
+
+            if (games.length === 0) {
+                gamesContent.innerHTML = '<div class="loading">暂无游戏记录</div>';
+                return;
+            }
+
+            const tableHTML = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>游戏ID</th>
+                            <th>用户ID</th>
+                            <th>分数</th>
+                            <th>会话ID</th>
+                            <th>游戏时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${games.map(game => `
+                            <tr>
+                                <td><span class="badge info">${game.id}</span></td>
+                                <td><span class="badge success">${game.user_id}</span></td>
+                                <td><strong>${game.score || 0}</strong></td>
+                                <td><small>${game.session_id || 'N/A'}</small></td>
+                                <td>${formatDate(game.created_at)}</td>
+                                <td>
+                                    <button class="action-btn" onclick="viewGameDetails(${game.id})">查看详情</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+
+            gamesContent.innerHTML = tableHTML;
+        }
+
+        // 过滤游戏记录
+        function filterGames() {
+            const searchTerm = document.getElementById('gameSearch').value.toLowerCase();
+            const filteredGames = allGames.filter(game =>
+                game.id.toString().includes(searchTerm) ||
+                game.user_id.toString().includes(searchTerm) ||
+                (game.session_id && game.session_id.toLowerCase().includes(searchTerm))
+            );
+            displayGames(filteredGames);
+        }
+
+        // 查看游戏详情
+        function viewGameDetails(gameId) {
+            const game = allGames.find(g => g.id === gameId);
+            if (game) {
+                const details = JSON.stringify(game, null, 2);
+                const popup = window.open('', '_blank', 'width=600,height=400');
+                popup.document.write(`
+                    <html>
+                        <head><title>游戏详情 - ID: ${gameId}</title></head>
+                        <body style="font-family: monospace; padding: 20px;">
+                            <h2>游戏详情 - ID: ${gameId}</h2>
+                            <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px; overflow: auto;">${details}</pre>
+                        </body>
+                    </html>
+                `);
+            }
+        }
+
+        // 加载游戏会话
+        async function loadSessions() {
+            const sessionsContent = document.getElementById('sessionsContent');
+            sessionsContent.innerHTML = '<div class="loading">正在加载会话数据...</div>';
+
+            try {
+                const sessions = await apiRequest('/sessions');
+                allSessions = sessions.data;
+                displaySessions(allSessions);
+            } catch (error) {
+                sessionsContent.innerHTML = `
+                    <div class="error">
+                        <strong>会话数据加载失败:</strong> ${error.message}<br><br>
+                        <strong>可能的原因：</strong><br>
+                        • 后端服务器可能需要重启<br>
+                        • API接口可能还未完全实现<br>
+                        • 网络连接问题<br><br>
+                        <button class="refresh-btn" onclick="loadSessions()">🔄 重试</button>
+                    </div>
+                `;
+            }
+        }
+
+        // 显示会话数据
+        function displaySessions(sessions) {
+            const sessionsContent = document.getElementById('sessionsContent');
+
+            if (sessions.length === 0) {
+                sessionsContent.innerHTML = '<div class="loading">暂无会话数据</div>';
+                return;
+            }
+
+            const tableHTML = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>会话ID</th>
+                            <th>用户ID</th>
+                            <th>状态</th>
+                            <th>创建时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${sessions.map(session => `
+                            <tr>
+                                <td><span class="badge info">${session.id}</span></td>
+                                <td><span class="badge success">${session.user_id}</span></td>
+                                <td><span class="badge ${session.status === 'active' ? 'success' : 'warning'}">${session.status}</span></td>
+                                <td>${formatDate(session.created_at)}</td>
+                                <td>
+                                    <button class="action-btn" onclick="viewSessionDetails('${session.id}')">查看详情</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+
+            sessionsContent.innerHTML = tableHTML;
+        }
+
+        // 加载游戏事件
+        async function loadEvents() {
+            const eventsContent = document.getElementById('eventsContent');
+            eventsContent.innerHTML = '<div class="loading">正在加载事件数据...</div>';
+
+            try {
+                const events = await apiRequest('/events');
+                allEvents = events.data;
+                displayEvents(allEvents);
+            } catch (error) {
+                eventsContent.innerHTML = `
+                    <div class="error">
+                        <strong>事件数据加载失败:</strong> ${error.message}<br><br>
+                        <strong>可能的原因：</strong><br>
+                        • 后端服务器可能需要重启<br>
+                        • API接口可能还未完全实现<br>
+                        • 网络连接问题<br><br>
+                        <button class="refresh-btn" onclick="loadEvents()">🔄 重试</button>
+                    </div>
+                `;
+            }
+        }
+
+        // 显示事件数据
+        function displayEvents(events) {
+            const eventsContent = document.getElementById('eventsContent');
+
+            if (events.length === 0) {
+                eventsContent.innerHTML = '<div class="loading">暂无事件数据</div>';
+                return;
+            }
+
+            const tableHTML = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>事件ID</th>
+                            <th>会话ID</th>
+                            <th>事件类型</th>
+                            <th>事件数据</th>
+                            <th>时间</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${events.map(event => `
+                            <tr>
+                                <td><span class="badge info">${event.id}</span></td>
+                                <td><small>${event.session_id}</small></td>
+                                <td><span class="badge warning">${event.event_type}</span></td>
+                                <td><small>${JSON.stringify(event.event_data).substring(0, 50)}...</small></td>
+                                <td>${formatDate(event.created_at)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+
+            eventsContent.innerHTML = tableHTML;
+        }
+
+        // 查看会话详情
+        function viewSessionDetails(sessionId) {
+            const session = allSessions.find(s => s.id === sessionId);
+            if (session) {
+                const details = JSON.stringify(session, null, 2);
+                const popup = window.open('', '_blank', 'width=600,height=400');
+                popup.document.write(`
+                    <html>
+                        <head><title>会话详情 - ID: ${sessionId}</title></head>
+                        <body style="font-family: monospace; padding: 20px;">
+                            <h2>会话详情 - ID: ${sessionId}</h2>
+                            <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px; overflow: auto;">${details}</pre>
+                        </body>
+                    </html>
+                `);
+            }
+        }
+
+        // 格式化日期
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            return date.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>注册问题诊断</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        button { background: #4ECDC4; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #45B7B8; }
+        input { padding: 8px; margin: 5px; border: 1px solid #ddd; border-radius: 3px; }
+        .result { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 3px; white-space: pre-wrap; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+    </style>
+</head>
+<body>
+    <h1>🔍 注册问题诊断工具</h1>
+    
+    <div class="test-section">
+        <h3>1. 检查API客户端配置</h3>
+        <button onclick="checkApiClient()">检查API客户端</button>
+        <div id="apiClientResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. 测试网络连接</h3>
+        <button onclick="testConnection()">测试连接</button>
+        <div id="connectionResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. 测试用户注册</h3>
+        <input type="text" id="testUsername" placeholder="输入测试用户名" value="诊断测试用户">
+        <button onclick="testRegistration()">测试注册</button>
+        <div id="registrationResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>4. 检查服务器状态</h3>
+        <button onclick="checkServerStatus()">检查服务器</button>
+        <div id="serverResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>5. 查看当前用户数据</h3>
+        <button onclick="checkUsers()">查看用户列表</button>
+        <div id="usersResult" class="result"></div>
+    </div>
+
+    <script src="js/api-client.js"></script>
+    <script>
+        // 显示结果的辅助函数
+        function showResult(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            element.className = `result ${isError ? 'error' : 'success'}`;
+            element.textContent = typeof data === 'object' ? JSON.stringify(data, null, 2) : data;
+        }
+
+        // 检查API客户端配置
+        function checkApiClient() {
+            try {
+                const info = {
+                    baseURL: apiClient.baseURL,
+                    hostname: window.location.hostname,
+                    currentUser: apiClient.currentUser,
+                    hasRegisterMethod: typeof apiClient.register === 'function',
+                    hasRegisterUserMethod: typeof apiClient.registerUser === 'function'
+                };
+                showResult('apiClientResult', info);
+                console.log('API客户端信息:', info);
+            } catch (error) {
+                showResult('apiClientResult', `错误: ${error.message}`, true);
+            }
+        }
+
+        // 测试网络连接
+        async function testConnection() {
+            try {
+                console.log('🔍 测试健康检查...');
+                const response = await fetch(apiClient.baseURL + '/health');
+                const data = await response.json();
+                showResult('connectionResult', `连接成功: ${JSON.stringify(data, null, 2)}`);
+                console.log('✅ 连接测试成功:', data);
+            } catch (error) {
+                showResult('connectionResult', `连接失败: ${error.message}`, true);
+                console.error('❌ 连接测试失败:', error);
+            }
+        }
+
+        // 测试用户注册
+        async function testRegistration() {
+            try {
+                const username = document.getElementById('testUsername').value.trim();
+                if (!username) {
+                    showResult('registrationResult', '请输入用户名', true);
+                    return;
+                }
+
+                console.log('🔍 测试用户注册...', username);
+                
+                // 直接调用API
+                const response = await fetch(apiClient.baseURL + '/users/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username })
+                });
+
+                const data = await response.json();
+                showResult('registrationResult', data);
+                console.log('✅ 注册测试结果:', data);
+
+                // 如果成功，立即检查用户列表
+                if (data.success) {
+                    setTimeout(checkUsers, 1000);
+                }
+            } catch (error) {
+                showResult('registrationResult', `注册失败: ${error.message}`, true);
+                console.error('❌ 注册测试失败:', error);
+            }
+        }
+
+        // 检查服务器状态
+        async function checkServerStatus() {
+            try {
+                const response = await fetch(apiClient.baseURL + '/stats');
+                const data = await response.json();
+                showResult('serverResult', data);
+                console.log('✅ 服务器状态:', data);
+            } catch (error) {
+                showResult('serverResult', `服务器检查失败: ${error.message}`, true);
+                console.error('❌ 服务器检查失败:', error);
+            }
+        }
+
+        // 查看用户列表
+        async function checkUsers() {
+            try {
+                const response = await fetch(apiClient.baseURL + '/users');
+                const data = await response.json();
+                showResult('usersResult', data);
+                console.log('✅ 用户列表:', data);
+            } catch (error) {
+                showResult('usersResult', `获取用户列表失败: ${error.message}`, true);
+                console.error('❌ 获取用户列表失败:', error);
+            }
+        }
+
+        // 页面加载时自动检查
+        window.addEventListener('load', () => {
+            console.log('🎮 诊断工具已加载');
+            checkApiClient();
+        });
+    </script>
+</body>
+</html>
