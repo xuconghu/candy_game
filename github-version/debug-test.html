@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare连接调试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        .test-item {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .success { background: rgba(76, 175, 80, 0.3); border: 1px solid #4CAF50; }
+        .error { background: rgba(244, 67, 54, 0.3); border: 1px solid #f44336; }
+        .info { background: rgba(33, 150, 243, 0.3); border: 1px solid #2196F3; }
+        .warning { background: rgba(255, 152, 0, 0.3); border: 1px solid #ff9800; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Cloudflare连接调试工具</h1>
+        
+        <div class="test-item">
+            <h3>📍 当前环境信息</h3>
+            <div id="envInfo" class="result info">
+                协议: <span id="protocol"></span><br>
+                主机: <span id="hostname"></span><br>
+                端口: <span id="port"></span><br>
+                用户代理: <span id="userAgent"></span>
+            </div>
+        </div>
+
+        <div class="test-item">
+            <h3>🌐 DNS解析测试</h3>
+            <button onclick="testDNS()">检查DNS解析</button>
+            <div id="dnsResult" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-item">
+            <h3>🔗 直接IP访问测试</h3>
+            <button onclick="testDirectIP()">测试直接IP访问</button>
+            <div id="ipResult" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-item">
+            <h3>🛡️ HTTPS API测试</h3>
+            <button onclick="testHTTPS()">测试HTTPS API</button>
+            <div id="httpsResult" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-item">
+            <h3>🔓 HTTP API测试</h3>
+            <button onclick="testHTTP()">测试HTTP API</button>
+            <div id="httpResult" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-item">
+            <h3>🔄 CORS测试</h3>
+            <button onclick="testCORS()">测试跨域访问</button>
+            <div id="corsResult" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-item">
+            <h3>📊 综合诊断</h3>
+            <button onclick="runAllTests()">运行所有测试</button>
+            <div id="summaryResult" class="result info">
+                点击"运行所有测试"开始诊断...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 显示环境信息
+        window.addEventListener('load', () => {
+            document.getElementById('protocol').textContent = window.location.protocol;
+            document.getElementById('hostname').textContent = window.location.hostname;
+            document.getElementById('port').textContent = window.location.port || '默认';
+            document.getElementById('userAgent').textContent = navigator.userAgent.substring(0, 100) + '...';
+        });
+
+        async function testDNS() {
+            const resultDiv = document.getElementById('dnsResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultDiv.textContent = '正在检查DNS解析...';
+
+            try {
+                // 使用DNS over HTTPS查询
+                const response = await fetch('https://cloudflare-dns.com/dns-query?name=xuconghu.top&type=A', {
+                    headers: { 'Accept': 'application/dns-json' }
+                });
+                const data = await response.json();
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ DNS解析成功！\n\n解析结果:\n${JSON.stringify(data, null, 2)}`;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ DNS查询失败: ${error.message}`;
+            }
+        }
+
+        async function testDirectIP() {
+            const resultDiv = document.getElementById('ipResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultDiv.textContent = '正在测试直接IP访问...';
+
+            try {
+                // 测试直接访问服务器IP
+                const response = await fetch('http://106.15.184.68/api/health', {
+                    mode: 'cors'
+                });
+                const data = await response.json();
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ 直接IP访问成功！\n\n响应:\n${JSON.stringify(data, null, 2)}`;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ 直接IP访问失败: ${error.message}`;
+            }
+        }
+
+        async function testHTTPS() {
+            const resultDiv = document.getElementById('httpsResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultDiv.textContent = '正在测试HTTPS API...';
+
+            try {
+                const response = await fetch('https://xuconghu.top/api/health');
+                const data = await response.json();
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ HTTPS API访问成功！\n\n响应:\n${JSON.stringify(data, null, 2)}`;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ HTTPS API访问失败: ${error.message}`;
+            }
+        }
+
+        async function testHTTP() {
+            const resultDiv = document.getElementById('httpResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultDiv.textContent = '正在测试HTTP API...';
+
+            try {
+                const response = await fetch('http://xuconghu.top/api/health');
+                const data = await response.json();
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ HTTP API访问成功！\n\n响应:\n${JSON.stringify(data, null, 2)}`;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ HTTP API访问失败: ${error.message}`;
+            }
+        }
+
+        async function testCORS() {
+            const resultDiv = document.getElementById('corsResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultDiv.textContent = '正在测试CORS配置...';
+
+            try {
+                const response = await fetch('https://xuconghu.top/api/health', {
+                    method: 'OPTIONS'
+                });
+                
+                const corsHeaders = {
+                    'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
+                    'Access-Control-Allow-Methods': response.headers.get('Access-Control-Allow-Methods'),
+                    'Access-Control-Allow-Headers': response.headers.get('Access-Control-Allow-Headers')
+                };
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ CORS配置检查完成！\n\n响应头:\n${JSON.stringify(corsHeaders, null, 2)}`;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ CORS测试失败: ${error.message}`;
+            }
+        }
+
+        async function runAllTests() {
+            const summaryDiv = document.getElementById('summaryResult');
+            summaryDiv.textContent = '🔄 正在运行所有测试，请稍候...';
+            
+            // 运行所有测试
+            await testDNS();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testDirectIP();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testHTTPS();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testHTTP();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testCORS();
+            
+            // 生成总结
+            summaryDiv.textContent = `📋 所有测试已完成！请查看上方各项测试结果。
+
+🔍 诊断建议:
+1. 如果DNS解析失败 → 检查Cloudflare DNS配置
+2. 如果直接IP访问失败 → 检查服务器和防火墙
+3. 如果HTTPS失败但HTTP成功 → 检查SSL/TLS配置
+4. 如果都失败 → 检查阿里云安全组设置
+
+💡 常见解决方案:
+• 确保阿里云安全组开放80和443端口
+• 检查Cloudflare SSL模式设置为"灵活"
+• 确认服务器API服务正在运行
+• 验证Nginx配置正确`;
+        }
+    </script>
+</body>
+</html>

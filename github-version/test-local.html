@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>糖果游戏 - 本地测试版</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #FFE4E1 0%, #FFF0F5 50%, #E6E6FA 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        
+        .notice {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #856404;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #FFB6C1 0%, #FFC0CB 100%);
+            color: #333;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        button:hover {
+            background: linear-gradient(135deg, #FFC0CB 0%, #FFD0DC 100%);
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .user-list {
+            margin-top: 20px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        th {
+            background: linear-gradient(135deg, #ADD8E6 0%, #87CEEB 100%);
+            font-weight: bold;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍭 糖果游戏 - 本地测试版</h1>
+        
+        <div class="notice">
+            <strong>📝 使用说明：</strong><br>
+            这是本地测试版本，可以直接访问HTTP API。请下载此文件到本地，然后用浏览器打开测试注册功能。
+        </div>
+        
+        <div class="form-group">
+            <label for="name">姓名 *</label>
+            <input type="text" id="name" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="gender">性别</label>
+            <select id="gender">
+                <option value="male">男</option>
+                <option value="female">女</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="idNumber">身份证号</label>
+            <input type="text" id="idNumber">
+        </div>
+        
+        <div class="form-group">
+            <label for="alipay">支付宝账号</label>
+            <input type="text" id="alipay">
+        </div>
+        
+        <button onclick="registerUser()">注册用户</button>
+        <button onclick="getUserList()">查看用户列表</button>
+        <button onclick="testAPI()">测试API连接</button>
+        
+        <div id="result" class="result"></div>
+        
+        <div id="userList" class="user-list"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://106.15.184.68/api';
+        
+        function showResult(message, isSuccess = true) {
+            const result = document.getElementById('result');
+            result.className = `result ${isSuccess ? 'success' : 'error'}`;
+            result.innerHTML = message;
+            result.style.display = 'block';
+        }
+        
+        async function testAPI() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                showResult(`✅ API连接成功！<br>服务器响应: ${data.message}`);
+            } catch (error) {
+                showResult(`❌ API连接失败: ${error.message}`, false);
+            }
+        }
+        
+        async function registerUser() {
+            const name = document.getElementById('name').value.trim();
+            const gender = document.getElementById('gender').value;
+            const idNumber = document.getElementById('idNumber').value.trim();
+            const alipay = document.getElementById('alipay').value.trim();
+            
+            if (!name) {
+                showResult('❌ 请输入姓名', false);
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/users`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name,
+                        gender,
+                        idNumber,
+                        alipay
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showResult(`✅ 注册成功！<br>用户ID: ${data.data.id}<br>姓名: ${data.data.name}`);
+                    // 清空表单
+                    document.getElementById('name').value = '';
+                    document.getElementById('idNumber').value = '';
+                    document.getElementById('alipay').value = '';
+                } else {
+                    showResult(`❌ 注册失败: ${data.message}`, false);
+                }
+            } catch (error) {
+                showResult(`❌ 注册失败: ${error.message}`, false);
+            }
+        }
+        
+        async function getUserList() {
+            try {
+                const response = await fetch(`${API_BASE}/users`);
+                const data = await response.json();
+                
+                if (data.success && data.data && data.data.length > 0) {
+                    let html = `
+                        <h3>📋 用户列表 (共 ${data.data.length} 个用户)</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>姓名</th>
+                                    <th>性别</th>
+                                    <th>身份证号</th>
+                                    <th>支付宝账号</th>
+                                    <th>注册日期</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    
+                    data.data.forEach(user => {
+                        const genderText = user.gender === 'male' ? '男' : user.gender === 'female' ? '女' : user.gender || '-';
+                        html += `
+                            <tr>
+                                <td>${user.id}</td>
+                                <td>${user.name || '-'}</td>
+                                <td>${genderText}</td>
+                                <td>${user.idNumber || '-'}</td>
+                                <td>${user.alipay || '-'}</td>
+                                <td>${user.registrationDate || '-'}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += '</tbody></table>';
+                    document.getElementById('userList').innerHTML = html;
+                    showResult('✅ 用户列表加载成功！');
+                } else {
+                    document.getElementById('userList').innerHTML = '<h3>📋 用户列表</h3><p>暂无用户数据</p>';
+                    showResult('ℹ️ 暂无用户数据');
+                }
+            } catch (error) {
+                showResult(`❌ 获取用户列表失败: ${error.message}`, false);
+            }
+        }
+        
+        // 页面加载时测试API连接
+        window.onload = function() {
+            testAPI();
+        };
+    </script>
+</body>
+</html>
