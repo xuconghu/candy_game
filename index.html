@@ -40,15 +40,16 @@
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
             background: url('image/background.png') center center / cover no-repeat;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            z-index: 10000;
+            z-index: 99999;
             transition: opacity 0.5s ease-out;
+            overflow: hidden;
         }
 
         .loading-screen.fade-out {
@@ -61,7 +62,15 @@
             font-weight: bold;
             color: white;
             text-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
-            margin-bottom: 50px;
+            margin-bottom: 10px;
+        }
+
+        .loading-subtitle {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            margin-bottom: 40px;
+            text-align: center;
         }
 
         .loading-container {
@@ -2765,6 +2774,7 @@
     <!-- 加载界面 -->
     <div id="loadingScreen" class="loading-screen">
         <div class="loading-title">糖果游戏</div>
+        <div class="loading-subtitle">第一次加载会比较慢，请耐心等待哦</div>
         <div class="loading-container">
             <div id="loadingBar" class="loading-bar"></div>
             <div id="candyPusher" class="candy-pusher"></div>
@@ -6634,7 +6644,7 @@
                     const gifSrc = `image/robot.gif?v=${timestamp}`;
 
                     // 添加视觉反馈 - 机器人闪烁效果
-                    robotImg.style.filter = 'brightness(1.3) drop-shadow(0 0 10px #00ff00)';
+                    robotImg.style.filter = 'brightness(1.2)';
                     robotImg.style.transform = 'scale(1.05)';
                     robotImg.style.transition = 'all 0.2s ease';
 
